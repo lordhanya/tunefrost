@@ -53,6 +53,8 @@ flutter:
     - assets/lottie/heart.json
     - assets/lottie/trash.json
     - assets/lottie/equalizer.json
+    # Cover art shown for songs that have no artwork of their own.
+    - assets/thumbnail/default_thumbnail.png
   fonts:
     - family: ZenMaruGothic
       fonts:

@@ -5,11 +5,16 @@ import 'package:music_player/core/models/song.dart';
 
 import '../providers/playback_providers.dart';
 
-/// Square album artwork with a palette-consistent placeholder while the
-/// art is loading or missing.
+/// Bundled cover art for songs that have none of their own.
+const _defaultArtworkAsset = 'assets/thumbnail/default_thumbnail.png';
+
+/// Square album artwork.
 ///
-/// Streamed songs carry a remote thumbnail instead of a MediaStore id, so
-/// they load over the network instead of querying the media store.
+/// Streamed songs carry a remote thumbnail instead of a MediaStore id, so they
+/// load over the network instead of querying the media store. Anything with no
+/// art of its own — local song with no embedded cover, or a thumbnail that
+/// fails to load — falls back to the bundled default cover; the neutral note
+/// plate is used only while the media store is still being queried.
 class SongArtwork extends ConsumerWidget {
   const SongArtwork({
     super.key,
@@ -30,7 +35,8 @@ class SongArtwork extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bytes = ref.watch(songArtworkProvider((song.id, querySize))).value;
+    final art = ref.watch(songArtworkProvider((song.id, querySize)));
+    final bytes = art.value;
     final artwork = song.artworkPath;
     // Remote thumbnails load over the network, including for downloads that
     // kept the YouTube thumbnail even though they now play from a file.
@@ -38,27 +44,57 @@ class SongArtwork extends ConsumerWidget {
         ? artwork
         : null;
 
+    final Widget image;
+    if (url != null && url.isNotEmpty) {
+      image = Image.network(
+        url,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        // A thumbnail that fails to load is indistinguishable from one that
+        // was never there.
+        errorBuilder: (_, _, _) => _DefaultArtwork(dimension: dimension),
+      );
+    } else if (bytes != null) {
+      image = Image.memory(bytes, fit: BoxFit.cover, gaplessPlayback: true);
+    } else if (art.isLoading) {
+      // Still asking the media store: stay neutral rather than flash the
+      // "no thumbnail" cover in front of art that is about to arrive.
+      image = _ArtworkPlaceholder(dimension: dimension);
+    } else {
+      image = _DefaultArtwork(dimension: dimension);
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
-      child: SizedBox.square(
-        dimension: dimension,
-        child: url != null && url.isNotEmpty
-            ? Image.network(
-                url,
-                fit: BoxFit.cover,
-                gaplessPlayback: true,
-                errorBuilder: (_, _, _) =>
-                    _ArtworkPlaceholder(dimension: dimension),
-              )
-            : bytes != null
-            ? Image.memory(bytes, fit: BoxFit.cover, gaplessPlayback: true)
-            : _ArtworkPlaceholder(dimension: dimension),
-      ),
+      child: SizedBox.square(dimension: dimension, child: image),
     );
   }
 }
 
-/// Neutral note glyph on a themed plate — shown while art loads or is absent.
+/// Bundled cover shown to songs that have no artwork of their own.
+///
+/// The master is far larger than any artwork slot, so it is decoded at the
+/// size it is actually drawn at — one tile never needs a 1672px bitmap.
+class _DefaultArtwork extends StatelessWidget {
+  const _DefaultArtwork({required this.dimension});
+
+  final double dimension;
+
+  @override
+  Widget build(BuildContext context) {
+    final pixels = (dimension * MediaQuery.devicePixelRatioOf(context)).round();
+    return Image.asset(
+      _defaultArtworkAsset,
+      fit: BoxFit.cover,
+      gaplessPlayback: true,
+      cacheWidth: pixels > 0 ? pixels : null,
+    );
+  }
+}
+
+/// Neutral note glyph on a themed plate — shown only while artwork is still
+/// being resolved, so a song that does have art never flashes the default
+/// cover first.
 class _ArtworkPlaceholder extends StatelessWidget {
   const _ArtworkPlaceholder({required this.dimension});
 

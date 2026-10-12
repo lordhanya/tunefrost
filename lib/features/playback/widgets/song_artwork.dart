@@ -74,7 +74,7 @@ class SongArtwork extends ConsumerWidget {
 /// Bundled cover shown to songs that have no artwork of their own.
 ///
 /// The master is far larger than any artwork slot, so it is decoded at the
-/// size it is actually drawn at — one tile never needs a 1672px bitmap.
+/// size it is actually drawn at — a 44px tile never needs the full bitmap.
 class _DefaultArtwork extends StatelessWidget {
   const _DefaultArtwork({required this.dimension});
 

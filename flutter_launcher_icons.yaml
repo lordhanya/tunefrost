@@ -1,0 +1,20 @@
+# Launcher icon config — single source of truth.
+# Regenerate with: `dart run flutter_launcher_icons`
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true # iOS rejects transparent pixels
+  background_color_ios: "#F3F8FC" # frost page tone — fallback behind the icon
+  image_path: "assets/icons/app_icon_full.png" # full composite (legacy/iOS)
+  adaptive_icon_background: "assets/icons/app_icon_background.png"
+  adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
+  adaptive_icon_monochrome: "assets/icons/app_icon_monochrome.png" # Android 13+ themed icon
+  windows:
+    generate: true
+    image_path: "assets/icons/app_icon_full.png"
+  macos:
+    generate: true
+    image_path: "assets/icons/app_icon_full.png"
+  web:
+    generate: true
+    image_path: "assets/icons/app_icon_full.png"

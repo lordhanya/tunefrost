@@ -1,0 +1,66 @@
+name: music_player
+description: "Tunefrost — a local music player that can also stream from YouTube Music."
+publish_to: 'none'
+
+version: 1.3.0+4
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  on_audio_query_pluse: ^3.0.7
+  flutter_riverpod: ^3.4.3
+
+  just_audio: ^0.10.6
+  just_audio_background: ^0.0.1-beta.17
+  just_audio_media_kit: ^2.1.0
+  audio_session: ^0.2.4
+
+  permission_handler: ^13.0.2
+  shared_preferences: ^2.5.5
+
+  youtube_explode_dart: ^3.1.0
+
+  collection: ^1.19.1
+  rxdart: ^0.28.0
+  path_provider: ^2.1.6
+  url_launcher: ^6.3.0
+  lottie: ^3.6.1
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    # Only the in-app brand mark ships in the bundle. The 1024px launcher-icon
+    # masters in assets/icons/ are build-time inputs for flutter_launcher_icons
+    # (it reads them from disk) and must NOT be bundled — they are ~17 MB and
+    # unused at runtime.
+    - assets/icons/app_icon_foreground.png
+    - assets/icons/brand_icon.png
+    # Hand-picked Lottie micro-interactions (vendored from the curation in
+    # flutter_animated_icons; see assets/lottie/README.md). Kept as individual
+    # files on purpose: depending on that package would bundle its full 79 MB
+    # library, since Flutter includes every asset a dependency declares.
+    - assets/lottie/download.json
+    - assets/lottie/heart.json
+    - assets/lottie/trash.json
+    - assets/lottie/equalizer.json
+  fonts:
+    - family: ZenMaruGothic
+      fonts:
+        - asset: assets/fonts/ZenMaruGothic-Light.ttf
+          weight: 300
+        - asset: assets/fonts/ZenMaruGothic-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/ZenMaruGothic-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/ZenMaruGothic-Bold.ttf
+          weight: 700

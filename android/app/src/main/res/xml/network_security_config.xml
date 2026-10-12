@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  just_audio serves StreamAudioSource (used for YouTube Music playback) through
+  its own local HTTP proxy on 127.0.0.1. Android blocks cleartext HTTP by
+  default, so ExoPlayer fails with CleartextNotPermittedException before a
+  single byte is fetched. Only the loopback address is opened up; everything
+  else stays HTTPS-only.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+</network-security-config>

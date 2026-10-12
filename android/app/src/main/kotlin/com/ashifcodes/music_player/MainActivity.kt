@@ -75,8 +75,8 @@ class MainActivity : AudioServiceActivity() {
         channel?.invokeMethod("open", uri)
     }
 
-    /// The `content://` / `file://` URI of a `VIEW` intent, or null when this
-    /// intent did not ask us to open anything.
+    // The `content://` / `file://` URI of a `VIEW` intent, or null when this
+    // intent did not ask us to open anything.
     private fun viewUri(intent: Intent?): String? {
         if (intent == null || intent.action != Intent.ACTION_VIEW) return null
         return intent.data?.toString()

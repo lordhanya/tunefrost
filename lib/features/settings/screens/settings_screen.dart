@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:music_player/app/theme.dart';
 import 'package:music_player/core/providers/haptics_provider.dart';
 import 'package:music_player/core/providers/listening_provider.dart';
+import 'package:music_player/core/providers/smartplay_provider.dart';
 import 'package:music_player/core/providers/theme_provider.dart';
 import 'package:music_player/core/utils/haptics.dart';
 import 'package:music_player/core/widgets/glass.dart';
@@ -22,6 +24,7 @@ class SettingsScreen extends ConsumerWidget {
     final mode = ref.watch(themeModeProvider);
     final hapticsOn = ref.watch(hapticsEnabledProvider);
     final historyCount = ref.watch(listeningEventsProvider).length;
+    final discoveryOn = ref.watch(smartPlayDiscoveryEnabledProvider);
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight;
 
     return Scaffold(
@@ -134,13 +137,35 @@ class SettingsScreen extends ConsumerWidget {
                         child: const Text('Clear'),
                       ),
               ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: discoveryOn,
+                onChanged: (value) {
+                  context.hapticSelect();
+                  unawaited(
+                    ref
+                        .read(smartPlayDiscoveryEnabledProvider.notifier)
+                        .set(value),
+                  );
+                },
+                title: const Text('Smart Play discovery'),
+                subtitle: Text(
+                  discoveryOn
+                      ? 'Sends searches derived from your listening to find music'
+                      : 'Off — the app sends nothing about your listening',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
               const Divider(height: 32),
               Text('About', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               const ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text('Tunefrost'),
-                subtitle: Text('Version 1.3.0'),
+                subtitle: Text('Version 1.4.0'),
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,

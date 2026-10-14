@@ -28,7 +28,11 @@ class TasteProfile {
   /// affinity alone; this is what keeps a session from circling.
   final Set<String> blockedIds;
 
-  /// Strongest artists first, capped — the entry point Phases 2 and 3 read.
+  /// Strongest names first, capped — the entry point Phases 2 and 3 read.
+  ///
+  /// Whatever the profile keyed the preference on, not necessarily a
+  /// performer: a tagged local file records its artist, a streamed one records
+  /// its uploader channel. Callers must not assume every seed is an artist.
   final List<String> seedArtists;
 
   static const empty = TasteProfile();

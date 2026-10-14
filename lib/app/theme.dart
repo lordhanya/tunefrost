@@ -252,11 +252,15 @@ abstract final class AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
+        // Screen titles — Tunefrost, Search, Settings — wear Outfit SemiBold,
+        // the one place the brand steps off Zen Maru Gothic. AppBar hands this
+        // style to whatever title widget is passed, so every `glassAppBar`
+        // screen picks it up from here instead of restating it.
         titleTextStyle: TextStyle(
           color: scheme.onSurface,
           fontSize: 20,
-          fontWeight: FontWeight.w500, // Medium for screen titles
-          fontFamily: 'ZenMaruGothic',
+          fontWeight: FontWeight.w600, // SemiBold for screen titles
+          fontFamily: 'Outfit',
         ),
       ),
       // One place keeps every row in the app on the same two weights:

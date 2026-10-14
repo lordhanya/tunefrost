@@ -37,7 +37,7 @@ class PrivacyScreen extends StatelessWidget {
           ),
           children: [
             Text(
-              'Last updated 12 October 2026',
+              'Last updated 14 October 2026',
               style: TextStyle(color: muted, fontSize: 13),
             ),
             const SizedBox(height: 20),
@@ -55,7 +55,9 @@ class PrivacyScreen extends StatelessWidget {
               body:
                   '• Your music files — to list and play your library and show '
                   'album art.\n'
-                  '• The internet — to search and stream from YouTube Music.',
+                  '• The internet — to search and stream from YouTube Music.\n'
+                  '• Search phrases derived from your listening — only while '
+                  'Smart Play discovery is on, which it is not by default.',
             ),
             const _Section(
               title: 'What is stored on your device',
@@ -63,17 +65,48 @@ class PrivacyScreen extends StatelessWidget {
                   '• App settings.\n'
                   '• A small cache that maps YouTube video ids to stream links, '
                   'so replays resolve faster.\n'
-                  '• Any audio you choose to download.',
+                  '• Any audio you choose to download.\n'
+                  '• A listening history for Smart Play — how long you '
+                  'listened, whether a track finished, and whether you '
+                  'skipped it early — plus the taste profile computed from '
+                  'it on your device. Neither is ever uploaded or shared, and '
+                  'you can delete both from Settings → Data → Listening '
+                  'history.',
+            ),
+            const _Section(
+              title: 'What Smart Play sends (off by default)',
+              body:
+                  'Smart Play discovery is off until you switch it on, in '
+                  'Settings → Data → Smart Play discovery or from the switch '
+                  'on the Smart Play screen.\n\n'
+                  'When it is on, the app turns your taste profile into a '
+                  'few search queries — at most four artist names at a time '
+                  '— and sends those phrases to the discovery provider.\n\n'
+                  '• Sent: the search phrases themselves.\n'
+                  '• Never sent: your listening history, play counts, '
+                  'favourites, scores, affinities, seed lists, or any other '
+                  'part of the taste profile.\n'
+                  '• When: the first time you open the screen, and whenever '
+                  'you tap refresh. Nothing runs in the background, and '
+                  'switching it off stops the requests at once.',
             ),
             const _Section(
               title: 'Third parties',
               body:
                   'When you search for or play a track, the app talks to '
-                  'YouTube directly to resolve the stream. That traffic goes to '
-                  'Google, not to the developer, and is governed by Google\'s '
-                  'own privacy policy. The "Developed by" entry in Settings '
-                  'opens a website in your browser — the app makes no '
-                  'background request to it.',
+                  'YouTube directly to resolve the stream, and when Smart '
+                  'Play discovery is on it also sends the artist-name search '
+                  'phrases described above. That traffic goes to Google, not '
+                  'to the developer, and is governed by Google\'s own privacy '
+                  'policy — none of it carries your listening history or '
+                  'taste profile.\n\n'
+                  'Those requests read YouTube\'s public web pages rather '
+                  'than the official YouTube Data API, so there is no '
+                  'authorized API relationship behind them. That is stated '
+                  'plainly rather than described as an official '
+                  'integration.\n\n'
+                  'The "Developed by" entry in Settings opens a website in '
+                  'your browser — the app makes no background request to it.',
             ),
             const _Section(
               title: 'Children',

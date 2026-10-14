@@ -2,7 +2,7 @@ name: music_player
 description: "Tunefrost — a local music player that can also stream from YouTube Music."
 publish_to: 'none'
 
-version: 1.3.0+4
+version: 1.4.0+5
 
 environment:
   sdk: ^3.13.4
@@ -56,6 +56,13 @@ flutter:
     # Cover art shown for songs that have no artwork of their own.
     - assets/thumbnail/default_thumbnail.png
   fonts:
+    # Outfit is used for one thing only: screen titles (AppTheme's
+    # `appBarTheme.titleTextStyle`). It ships as a single weight because no
+    # other text in the app asks for Outfit — nothing else can pick it up.
+    - family: Outfit
+      fonts:
+        - asset: assets/fonts/Outfit-SemiBold.ttf
+          weight: 600
     - family: ZenMaruGothic
       fonts:
         - asset: assets/fonts/ZenMaruGothic-Light.ttf

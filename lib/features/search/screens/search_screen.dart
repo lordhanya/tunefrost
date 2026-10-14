@@ -48,6 +48,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Smart Play',
+            icon: const Icon(Icons.auto_awesome_rounded),
+            onPressed: () {
+              context.hapticSelect();
+              Navigator.of(context).pushNamed('/smartplay');
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [

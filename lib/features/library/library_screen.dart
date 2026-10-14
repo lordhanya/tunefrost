@@ -55,24 +55,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
       extendBodyBehindAppBar: true,
       appBar: glassAppBar(
         context,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(5),
-              child: Image.asset(
-                'assets/icons/brand_icon.png',
-                width: 30,
-                height: 30,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'Tunefrost',
-              style: Theme.of(context).textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w700),
-            ),
-          ],
+        title: Text(
+          'Tunefrost',
+          // Outfit SemiBold like every other screen title; size and weight
+          // come from `titleLarge` so the brand keeps its larger cut.
+          style: Theme.of(context).textTheme.titleLarge
+              ?.copyWith(fontFamily: 'Outfit', fontWeight: FontWeight.w600),
         ),
         bottom: TabBar(
           controller: _tabs,

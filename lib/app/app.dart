@@ -12,6 +12,7 @@ import 'package:music_player/features/playlists/screens/playlists_screen.dart';
 import 'package:music_player/features/search/screens/search_screen.dart';
 import 'package:music_player/features/settings/screens/privacy_screen.dart';
 import 'package:music_player/features/settings/screens/settings_screen.dart';
+import 'package:music_player/features/smartplay/screens/smartplay_preview_screen.dart';
 
 class MusicPlayerApp extends ConsumerWidget {
   const MusicPlayerApp({super.key});
@@ -69,6 +70,7 @@ class MusicPlayerApp extends ConsumerWidget {
         '/library': (context) => const LibraryScreen(),
         '/playlists': (context) => const PlaylistsScreen(),
         '/search': (context) => const SearchScreen(),
+        '/smartplay': (context) => const SmartPlayScreen(),
         '/settings': (context) => const SettingsScreen(),
         '/privacy': (context) => const PrivacyScreen(),
         '/equalizer': (context) => const EqualizerScreen(),

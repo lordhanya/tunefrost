@@ -1,6 +1,6 @@
 # Privacy Policy — Tunefrost
 
-**Last updated: 12 October 2026**
+**Last updated: 13 October 2026**
 
 ## The short version
 
@@ -23,6 +23,12 @@ Everything the app stores stays on your device, and uninstalling removes it.
 - A small cache that maps YouTube video IDs to resolved stream URLs, so
   repeated plays resolve faster.
 - Any audio you download, written to app storage.
+- A listening history for Smart Play: for each track, how long you actually
+  listened, whether it played to the end, and whether you skipped it early.
+  It is used only on your device to build your taste profile — a small set of
+  artist and track scores, computed locally — and is never sent anywhere.
+  You can delete it at any time from **Settings → Data → Listening history**,
+  which removes both the stored entries and the profile built from them.
 
 None of this leaves the device.
 

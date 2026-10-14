@@ -7,11 +7,14 @@ import 'package:rxdart/rxdart.dart';
 
 import 'package:music_player/audio/audio_player_service.dart';
 import 'package:music_player/audio/youtube_audio_source.dart';
+import 'package:music_player/core/models/listening_event.dart';
 import 'package:music_player/core/models/queue_state.dart';
 import 'package:music_player/core/models/song.dart';
+import 'package:music_player/core/providers/listening_provider.dart';
 import 'package:music_player/core/providers/play_history_provider.dart';
 import 'package:music_player/core/providers/theme_provider.dart';
 import 'package:music_player/core/services/queue_storage.dart';
+import 'package:music_player/core/taste/listening_stint_tracker.dart';
 
 final queueStorageProvider = Provider<QueueStorage>(
   (ref) => QueueStorage(ref.watch(sharedPreferencesProvider)),
@@ -94,15 +97,42 @@ final currentSongProvider = Provider<Song?>(
 /// seconds, or twice for the same stint — so fast scrubbing through the
 /// library, resuming, or a restored queue on launch can't inflate recents
 /// or play counts.
+///
+/// This is deliberately the only playback listener in the app that records
+/// history: it also feeds [ListeningStintTracker], so what counts as a play
+/// and what gets logged as a listen are decided by the same observations and
+/// can never disagree.
 final playHistoryRecorderProvider = Provider<void>((ref) {
   Timer? timer;
   String? seen;
   var counted = false;
 
+  final tracker = ListeningStintTracker();
+
+  void record(ListeningEvent? event) {
+    if (event == null) return;
+    unawaited(ref.read(listeningEventsProvider.notifier).record(event));
+  }
+
+  // Bring in whatever previous runs recorded, so the profile has something to
+  // rank against before the first listen of the session finalises.
+  unawaited(ref.read(listeningEventsProvider.notifier).load());
+
   ref.listen(playbackStateProvider, (_, next) {
     final state = next.value;
     final id = state?.currentSong?.id;
     final playing = state?.playbackState == PlaybackState.playing;
+
+    if (state != null) {
+      record(
+        tracker.onPlayback(
+          song: state.currentSong,
+          state: state.playbackState,
+          duration: ref.read(durationProvider).value,
+          nowMs: DateTime.now().millisecondsSinceEpoch,
+        ),
+      );
+    }
 
     if (id != seen) {
       seen = id;
@@ -122,8 +152,21 @@ final playHistoryRecorderProvider = Provider<void>((ref) {
     });
   }, fireImmediately: true);
 
+  // Advances the high-water mark the tracker measures played time against.
+  // Bookkeeping only — no disk write ever happens on this path.
+  ref.listen(positionProvider, (_, next) {
+    record(
+      tracker.onPosition(
+        position: next.value ?? Duration.zero,
+        nowMs: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+  });
+
   ref.onDispose(() {
     timer?.cancel();
+    // Close out a listen still in flight so the last track isn't forgotten.
+    record(tracker.flush());
   });
 });
 

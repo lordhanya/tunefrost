@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:music_player/app/theme.dart';
 import 'package:music_player/core/providers/haptics_provider.dart';
+import 'package:music_player/core/providers/listening_provider.dart';
 import 'package:music_player/core/providers/theme_provider.dart';
 import 'package:music_player/core/utils/haptics.dart';
 import 'package:music_player/core/widgets/glass.dart';
@@ -20,6 +21,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(themeModeProvider);
     final hapticsOn = ref.watch(hapticsEnabledProvider);
+    final historyCount = ref.watch(listeningEventsProvider).length;
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight;
 
     return Scaffold(
@@ -110,6 +112,29 @@ class SettingsScreen extends ConsumerWidget {
                 },
               ),
               const Divider(height: 32),
+              Text('Data', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.history_rounded),
+                title: const Text('Listening history'),
+                subtitle: Text(
+                  historyCount == 0
+                      ? 'Nothing recorded yet'
+                      : '$historyCount ${historyCount == 1 ? 'entry' : 'entries'}, kept on this device',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                ),
+                trailing: historyCount == 0
+                    ? null
+                    : TextButton(
+                        onPressed: () => _confirmClearHistory(context, ref),
+                        child: const Text('Clear'),
+                      ),
+              ),
+              const Divider(height: 32),
               Text('About', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               const ListTile(
@@ -155,4 +180,42 @@ class SettingsScreen extends ConsumerWidget {
       bottomNavigationBar: const MiniPlayer(),
     );
   }
+}
+
+/// Removes the listening history after a confirmation. It is the only stored
+/// data with no other purpose, so it gets a way out and an immediate answer:
+/// the file is deleted and the taste profile recomputes on the next frame.
+Future<void> _confirmClearHistory(BuildContext context, WidgetRef ref) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Clear listening history?'),
+      content: const Text(
+        'This removes the history used to personalise what plays next. '
+        'Your favourites, play counts and queue are left alone.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: const Text('Clear'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
+
+  await ref.read(listeningEventsProvider.notifier).clear();
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      const SnackBar(
+        content: Text('Listening history cleared'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
 }

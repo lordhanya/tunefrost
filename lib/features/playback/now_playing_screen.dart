@@ -395,7 +395,7 @@ class _NowPlayingBody extends ConsumerWidget {
         children: [
           // Ambient glow behind everything — colour is pulled from the
           // current artwork and cross-fades when the song changes.
-          _AmbientGlow(song: song),
+          Positioned.fill(child: _AmbientGlow(song: song)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
@@ -462,24 +462,23 @@ class _AmbientGlow extends ConsumerWidget {
     return palette.when(
       data: (palette) {
         if (palette == null) return const SizedBox.shrink();
-        return Positioned.fill(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 700),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            child: DecoratedBox(
-              key: ValueKey(song.id),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    palette.glowColor.withValues(alpha: 0.16),
-                    palette.glowColor.withValues(alpha: 0.05),
-                    Colors.transparent,
-                    Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.92),                  ],
-                  stops: const [0.0, 0.30, 0.70, 1.0],
-                ),
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 700),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          child: DecoratedBox(
+            key: ValueKey(song.id),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  palette.glowColor.withValues(alpha: 0.24),
+                  palette.glowColor.withValues(alpha: 0.08),
+                  Colors.transparent,
+                  Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.92),
+                ],
+                stops: const [0.0, 0.30, 0.70, 1.0],
               ),
             ),
           ),

@@ -187,19 +187,20 @@ Future<void> showSongActionsSheet(
           final progress = videoId == null ? null : downloads.progress[videoId];
           final failed = videoId != null && downloads.failed.contains(videoId);
 
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                child: Text(
-                  song.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(sheetContext).textTheme.titleMedium,
+          return SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  child: Text(
+                    song.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(sheetContext).textTheme.titleMedium,
+                  ),
                 ),
-              ),
-              if (playlistId != null && playlistIndex != null)
+                if (playlistId != null && playlistIndex != null)
                 ListTile(
                   leading: const Icon(Icons.remove_circle_outline_rounded),
                   title: const Text('Remove from playlist'),
@@ -338,7 +339,8 @@ Future<void> showSongActionsSheet(
                   ),
               const SizedBox(height: 8),
             ],
-          );
+          ),
+        );
         },
       ),
     ),

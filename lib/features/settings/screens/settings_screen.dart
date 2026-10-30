@@ -53,6 +53,7 @@ class SettingsScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Playback — Android only
               if (Platform.isAndroid) ...[
                 Text(
                   'Playback',
@@ -73,8 +74,137 @@ class SettingsScreen extends ConsumerWidget {
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => Navigator.of(context).pushNamed('/equalizer'),
                 ),
+                const Divider(height: 16),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.tune_rounded),
+                  title: const Text('Audio quality'),
+                  subtitle: Text(
+                    ref.watch(streamQualityProvider) == StreamQuality.dataSaver
+                        ? 'Data saver'
+                        : 'High quality',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 13,
+                    ),
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () async {
+                    final current = ref.read(streamQualityProvider);
+                    final choice = await showDialog<StreamQuality>(
+                      context: context,
+                      builder: (dialogContext) {
+                        final scheme =
+                            Theme.of(dialogContext).colorScheme;
+                        return Dialog(
+                          insetPadding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 28,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          backgroundColor: scheme.surfaceContainerHighest,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              24, 20, 24, 16,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: scheme.primaryContainer
+                                            .withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(
+                                        Icons.tune_rounded,
+                                        color: scheme.primary,
+                                        size: 22,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            'Audio quality',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'Choose streaming sound quality',
+                                            style: TextStyle(
+                                              color:
+                                                  scheme.onSurfaceVariant,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
+                                _StreamQualityTile(
+                                  value: StreamQuality.high,
+                                  groupValue: current,
+                                  title: 'High quality',
+                                  subtitle: 'Best sound, uses more data',
+                                  icon: Icons.graphic_eq_rounded,
+                                  onSelected: () =>
+                                      Navigator.of(dialogContext)
+                                          .pop(StreamQuality.high),
+                                ),
+                                const SizedBox(height: 10),
+                                _StreamQualityTile(
+                                  value: StreamQuality.dataSaver,
+                                  groupValue: current,
+                                  title: 'Data saver',
+                                  subtitle:
+                                      'Smaller size, great for slow networks',
+                                  icon: Icons.signal_cellular_alt_1_bar_rounded,
+                                  onSelected: () =>
+                                      Navigator.of(dialogContext)
+                                          .pop(StreamQuality.dataSaver),
+                                ),
+                                const SizedBox(height: 24),
+                                Row(
+                                  children: [
+                                    const Spacer(),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(dialogContext).pop(),
+                                      child: const Text('Cancel'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                    if (choice != null) {
+                      await ref
+                          .read(streamQualityProvider.notifier)
+                          .setQuality(choice);
+                    }
+                  },
+                ),
                 const Divider(height: 32),
               ],
+              // Appearance
               Text(
                 'Appearance',
                 style: Theme.of(context).textTheme.titleMedium,
@@ -99,134 +229,12 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
               const Divider(height: 32),
-              Text('Feedback', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 4),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Haptic feedback'),
-                subtitle: Text(
-                  'Vibrate gently on taps and toggles',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 13,
-                  ),
-                ),
-                secondary: const Icon(Icons.vibration_rounded),
-                value: hapticsOn,
-                onChanged: (value) {
-                  context.hapticSelect();
-                  ref.read(hapticsEnabledProvider.notifier).setEnabled(value);
-                },
+              // Downloads
+              Text(
+                'Downloads',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-              const Divider(height: 32),
-              Text('Data', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.history_rounded),
-                title: const Text('Listening history'),
-                subtitle: Text(
-                  historyCount == 0
-                      ? 'Nothing recorded yet'
-                      : '$historyCount ${historyCount == 1 ? 'entry' : 'entries'}, kept on this device',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 13,
-                  ),
-                ),
-                trailing: historyCount == 0
-                    ? null
-                    : TextButton(
-                        onPressed: () => _confirmClearHistory(context, ref),
-                        child: const Text('Clear'),
-                      ),
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                value: discoveryOn,
-                onChanged: (value) {
-                  context.hapticSelect();
-                  unawaited(
-                    ref
-                        .read(smartPlayDiscoveryEnabledProvider.notifier)
-                        .set(value),
-                  );
-                },
-                title: const Text('Smart Play discovery'),
-                subtitle: Text(
-                  discoveryOn
-                      ? 'Sends searches derived from your listening to find music'
-                      : 'Off — the app sends nothing about your listening',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-              const Divider(height: 32),
-              Text('About', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              const ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text('Tunefrost'),
-                subtitle: Text('Version 1.4.0'),
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.tune_rounded),
-                title: const Text('Audio quality'),
-                subtitle: Text(
-                  ref.watch(streamQualityProvider) == StreamQuality.dataSaver
-                      ? 'Data saver'
-                      : 'High quality',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 13,
-                  ),
-                ),
-                onTap: () async {
-                  final current = ref.read(streamQualityProvider);
-                  final choice = await showDialog<StreamQuality>(
-                    context: context,
-                    builder: (dialogContext) => AlertDialog(
-                      title: const Text('Audio quality'),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          RadioGroup<StreamQuality>(
-                            groupValue: current,
-                            onChanged: (v) => Navigator.of(dialogContext).pop(v),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                RadioListTile<StreamQuality>(
-                                  value: StreamQuality.high,
-                                  title: const Text('High quality'),
-                                  subtitle: const Text('Best sound, uses more data'),
-                                ),
-                                RadioListTile<StreamQuality>(
-                                  value: StreamQuality.dataSaver,
-                                  title: const Text('Data saver'),
-                                  subtitle: const Text('Smaller size, great for slow networks'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(dialogContext).pop(),
-                          child: const Text('Cancel'),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (choice != null) {
-                    await ref.read(streamQualityProvider.notifier).setQuality(choice);
-                  }
-                },
-              ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.folder_open_rounded),
@@ -266,6 +274,86 @@ class SettingsScreen extends ConsumerWidget {
                   }
                 },
               ),
+              const Divider(height: 32),
+              // Data / personalisation
+              Text(
+                'Data',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: discoveryOn,
+                onChanged: (value) {
+                  context.hapticSelect();
+                  unawaited(
+                    ref
+                        .read(smartPlayDiscoveryEnabledProvider.notifier)
+                        .set(value),
+                  );
+                },
+                title: const Text('Smart Play discovery'),
+                subtitle: Text(
+                  discoveryOn
+                      ? 'Sends searches derived from your listening to find music'
+                      : 'Off — the app sends nothing about your listening',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.history_rounded),
+                title: const Text('Listening history'),
+                subtitle: Text(
+                  historyCount == 0
+                      ? 'Nothing recorded yet'
+                      : '$historyCount ${historyCount == 1 ? 'entry' : 'entries'}, kept on this device',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                ),
+                trailing: historyCount == 0
+                    ? null
+                    : TextButton(
+                        onPressed: () => _confirmClearHistory(context, ref),
+                        child: const Text('Clear'),
+                      ),
+              ),
+              const Divider(height: 32),
+              // Feedback
+              Text(
+                'Feedback',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 4),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Haptic feedback'),
+                subtitle: Text(
+                  'Vibrate gently on taps and toggles',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                ),
+                secondary: const Icon(Icons.vibration_rounded),
+                value: hapticsOn,
+                onChanged: (value) {
+                  context.hapticSelect();
+                  ref.read(hapticsEnabledProvider.notifier).setEnabled(value);
+                },
+              ),
+              const Divider(height: 32),
+              // Privacy & About
+              Text(
+                'Privacy & About',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.privacy_tip_outlined),
@@ -296,6 +384,11 @@ class SettingsScreen extends ConsumerWidget {
                   Uri.parse('https://ashifcodes.tech'),
                   mode: LaunchMode.externalApplication,
                 ),
+              ),
+              const ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('Tunefrost'),
+                subtitle: Text('Version 1.4.0'),
               ),
             ],
           ),
@@ -342,4 +435,101 @@ Future<void> _confirmClearHistory(BuildContext context, WidgetRef ref) async {
         behavior: SnackBarBehavior.floating,
       ),
     );
+}
+
+/// One audio-quality choice inside the settings dialog. The selected option is
+/// highlighted with the theme's primary container; unselected options stay
+/// subtle so the choice reads at a glance.
+class _StreamQualityTile extends StatelessWidget {
+  const _StreamQualityTile({
+    required this.value,
+    required this.groupValue,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onSelected,
+  });
+
+  final StreamQuality value;
+  final StreamQuality groupValue;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final selected = value == groupValue;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onSelected,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: selected ? scheme.primaryContainer : scheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected
+                ? scheme.primary
+                : scheme.outlineVariant.withValues(alpha: 0.5),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: selected ? scheme.primary : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: selected
+                      ? scheme.primary
+                      : scheme.onSurfaceVariant,
+                  width: 2,
+                ),
+              ),
+              child: selected
+                  ? const Icon(Icons.done, size: 12, color: Colors.white)
+                  : null,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: selected
+                          ? scheme.onPrimaryContainer
+                          : scheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: selected
+                          ? scheme.onPrimaryContainer.withValues(alpha: 0.8)
+                          : scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

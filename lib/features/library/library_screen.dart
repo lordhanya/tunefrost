@@ -80,24 +80,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.sort_rounded),
-            tooltip: 'Sort',
-            onPressed: () => showLibrarySortSheet(context, ref),
-          ),
-          IconButton(
             icon: const Icon(Icons.search_rounded),
             tooltip: 'Search',
             onPressed: () => Navigator.of(context).pushNamed('/search'),
           ),
           IconButton(
-            icon: const Icon(Icons.playlist_play_rounded),
-            tooltip: 'Playlists',
-            onPressed: () => Navigator.of(context).pushNamed('/playlists'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Settings',
-            onPressed: () => Navigator.of(context).pushNamed('/settings'),
+            icon: const Icon(Icons.more_vert_rounded),
+            tooltip: 'More',
+            onPressed: () => _showMoreMenu(context, ref),
           ),
         ],
       ),
@@ -163,6 +153,51 @@ Future<void> showLibrarySortSheet(BuildContext context, WidgetRef ref) {
             const SizedBox(height: 8),
           ],
         ),
+      ),
+    ),
+  );
+}
+
+void _showMoreMenu(BuildContext context, WidgetRef ref) {
+  final scheme = Theme.of(context).colorScheme;
+
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: scheme.surfaceContainerHigh,
+    showDragHandle: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (sheetContext) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.sort_rounded),
+            title: const Text('Sort'),
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              showLibrarySortSheet(context, ref);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.playlist_play_rounded),
+            title: const Text('Playlists'),
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              Navigator.of(context).pushNamed('/playlists');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings_outlined),
+            title: const Text('Settings'),
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              Navigator.of(context).pushNamed('/settings');
+            },
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
     ),
   );

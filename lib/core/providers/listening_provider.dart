@@ -51,8 +51,18 @@ class ListeningEventsNotifier extends Notifier<List<ListeningEvent>> {
   });
 
   /// Prepends one finished listen and schedules a write.
+  ///
+  /// Consecutive entries for the same song are collapsed to avoid spamming
+  /// history when a track loops (e.g. repeat-one) or restarts. A song that is
+  /// played again after a different track still gets its own entry.
   Future<void> record(ListeningEvent event) async {
     await load();
+    if (state.isNotEmpty && state.first.songId == event.songId) {
+      // Same song as the most recent listen: treat as one session, don't
+      // create a duplicate entry. Still flush pending writes.
+      _scheduleFlush();
+      return;
+    }
     state = [event, ...state].take(ListeningEventStore.maxEvents).toList(
       growable: false,
     );

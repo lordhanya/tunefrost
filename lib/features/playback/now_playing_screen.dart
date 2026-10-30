@@ -15,6 +15,7 @@ import 'package:music_player/core/widgets/press_scale.dart';
 import '../library/providers/downloads_provider.dart';
 import '../library/widgets/song_actions_sheet.dart';
 import 'providers/playback_providers.dart';
+import 'providers/artwork_palette_provider.dart';
 import 'widgets/queue_sheet.dart';
 import 'widgets/song_artwork.dart';
 
@@ -390,50 +391,102 @@ class _NowPlayingBody extends ConsumerWidget {
 
     return SafeArea(
       top: false,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          children: [
-            const SizedBox(height: 8),
-            Expanded(
-              flex: 5,
-              child: Center(
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: _SwipeSkipPane(
-                    trackId: song.id,
-                    canNext: state.hasNext,
-                    canPrevious: state.hasPrevious,
-                    onNext: () => player.playNext(),
-                    onPrevious: () => player.playPrevious(),
-                    child: Hero(
-                      tag: 'artwork-${song.id}',
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: SongArtwork(
-                          song: song,
-                          dimension: double.infinity,
-                          radius: 12,
-                          querySize: 800,
+      child: Stack(
+        children: [
+          // Ambient glow behind everything — colour is pulled from the
+          // current artwork and cross-fades when the song changes.
+          _AmbientGlow(song: song),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                Expanded(
+                  flex: 5,
+                  child: Center(
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: _SwipeSkipPane(
+                        trackId: song.id,
+                        canNext: state.hasNext,
+                        canPrevious: state.hasPrevious,
+                        onNext: () => player.playNext(),
+                        onPrevious: () => player.playPrevious(),
+                        child: Hero(
+                          tag: 'artwork-${song.id}',
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: SongArtwork(
+                              song: song,
+                              dimension: double.infinity,
+                              radius: 12,
+                              querySize: 800,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
+                const Spacer(flex: 1),
+                _TrackInfoSection(song: song),
+                const Spacer(flex: 1),
+                const _SeekSlider(),
+                const SizedBox(height: 16),
+                _MainControls(state: state),
+                const SizedBox(height: 20),
+                _SecondaryControls(state: state),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Subtle ambient glow pulled from the current song's cover art.
+///
+/// Only the dominant/vibrant tone is used, at low alpha, so it reads as a
+/// mood wash rather than a busy background. Cross-fades on song change.
+class _AmbientGlow extends ConsumerWidget {
+  const _AmbientGlow({required this.song});
+
+  final Song song;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = ref.watch(artworkPaletteProvider(song));
+
+    return palette.when(
+      data: (palette) {
+        if (palette == null) return const SizedBox.shrink();
+        return Positioned.fill(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 700),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            child: DecoratedBox(
+              key: ValueKey(song.id),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    palette.glowColor.withValues(alpha: 0.16),
+                    palette.glowColor.withValues(alpha: 0.05),
+                    Colors.transparent,
+                    Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.92),                  ],
+                  stops: const [0.0, 0.30, 0.70, 1.0],
+                ),
               ),
             ),
-            const Spacer(flex: 1),
-            _TrackInfoSection(song: song),
-            const Spacer(flex: 1),
-            const _SeekSlider(),
-            const SizedBox(height: 16),
-            _MainControls(state: state),
-            const SizedBox(height: 20),
-            _SecondaryControls(state: state),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }

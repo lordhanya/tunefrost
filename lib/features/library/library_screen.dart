@@ -66,14 +66,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
           controller: _tabs,
           isScrollable: true,
           tabAlignment: TabAlignment.start,
-          indicator: BoxDecoration(
-            color: scheme.primary.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          indicatorPadding: const EdgeInsets.symmetric(horizontal: 8),
-          indicatorSize: TabBarIndicatorSize.tab,
+          indicatorColor: scheme.primary,
           labelColor: scheme.primary,
           unselectedLabelColor: scheme.onSurfaceVariant,
+          indicatorSize: TabBarIndicatorSize.label,
           tabs: const [
             Tab(text: 'Songs'),
             Tab(text: 'Albums'),

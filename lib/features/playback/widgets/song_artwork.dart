@@ -82,12 +82,13 @@ class _DefaultArtwork extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pixels = (dimension * MediaQuery.devicePixelRatioOf(context)).round();
+    final rawPixels = dimension * MediaQuery.devicePixelRatioOf(context);
+    final pixels = rawPixels.isFinite ? rawPixels.round() : null;
     return Image.asset(
       _defaultArtworkAsset,
       fit: BoxFit.cover,
       gaplessPlayback: true,
-      cacheWidth: pixels > 0 ? pixels : null,
+      cacheWidth: pixels != null && pixels > 0 ? pixels : null,
     );
   }
 }
@@ -110,7 +111,7 @@ class _ArtworkPlaceholder extends StatelessWidget {
         // read as "artwork missing" rather than a speck or a full bleed.
         child: Icon(
           Icons.music_note_rounded,
-          size: dimension * 0.45,
+          size: dimension.isFinite ? dimension * 0.45 : 48,
           color: scheme.outline,
         ),
       ),

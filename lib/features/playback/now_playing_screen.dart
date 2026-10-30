@@ -10,7 +10,6 @@ import 'package:music_player/core/models/song.dart';
 import 'package:music_player/core/providers/play_history_provider.dart';
 import 'package:music_player/core/utils/format.dart';
 import 'package:music_player/core/utils/haptics.dart';
-import 'package:music_player/core/widgets/marquee_text.dart';
 import 'package:music_player/core/widgets/press_scale.dart';
 
 import '../library/providers/downloads_provider.dart';
@@ -102,15 +101,16 @@ class NowPlayingScreen extends ConsumerWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
                     child: SizedBox(
                       width: 48,
                       height: 48,
@@ -269,6 +269,7 @@ class NowPlayingScreen extends ConsumerWidget {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -286,21 +287,22 @@ class NowPlayingScreen extends ConsumerWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-              child: Text(
-                'Playback speed',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: scheme.onSurface,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                child: Text(
+                  'Playback speed',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: scheme.onSurface,
+                  ),
                 ),
               ),
-            ),
-            ...speeds.map(
+              ...speeds.map(
               (s) => ListTile(
                 leading: speed == s
                     ? Icon(Icons.check_rounded, color: scheme.primary)
@@ -314,6 +316,7 @@ class NowPlayingScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
           ],
+        ),
         ),
       ),
     );
@@ -453,11 +456,12 @@ class _TrackInfoSection extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              MarqueeText(
+              Text(
                 song.title,
+                softWrap: true,
                 style: TextStyle(
                   color: scheme.onSurface,
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.3,
                 ),

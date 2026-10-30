@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/providers/theme_provider.dart';
+import '../core/services/network_quality_service.dart';
+import '../features/library/providers/downloads_provider.dart';
 import '../features/playback/providers/playback_providers.dart';
 import 'theme.dart';
 
@@ -32,6 +34,76 @@ class MusicPlayerApp extends ConsumerWidget {
     ref.watch(playHistoryRecorderProvider);
     // Plays audio files the OS hands us ("Open with", default player).
     ref.watch(openMediaHandlerProvider);
+    // Shows a snackbar when a download finishes. The notifier lives for the
+    // app's lifetime, so the subscription never needs cancelling.
+    ref.read(downloadsProvider.notifier).completed.listen((title) {
+      final messenger = _messengerKey.currentState;
+      if (messenger == null) return;
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('Downloaded “$title”'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    });
+    ref.read(downloadsProvider.notifier).failed.listen((title) {
+      final messenger = _messengerKey.currentState;
+      if (messenger == null) return;
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              "Couldn't download “$title”. Check your connection and try again.",
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    });
+    // The user chose a SAF folder but a download could not be verified there
+    // (e.g. the storage grant was revoked). The file is still in app-private
+    // storage and playable offline, but we must not silently claim it landed
+    // in the chosen folder.
+    ref.read(downloadsProvider.notifier).safFallback.listen((title) {
+      final messenger = _messengerKey.currentState;
+      if (messenger == null) return;
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              "“$title” downloaded, but it could not be saved to your chosen folder; "
+              "it’s stored in app storage instead.",
+            ),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+    });
+    // Runs once per session to gently inform on slow connections.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(networkQualityProvider.notifier).checkOnce();
+    });
+    ref.listen(networkQualityProvider, (previous, next) {
+      final wasSlow = previous?.quality == NetworkQuality.slow &&
+          previous?.checked == true;
+      if (next.checked && next.quality == NetworkQuality.slow && !wasSlow) {
+        final messenger = _messengerKey.currentState;
+        if (messenger == null) return;
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text(
+                "Looks like your connection is a little slow. Tracks might take a moment to load.",
+              ),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+      }
+    });
 
     ref.listen(playbackFailuresProvider, (previous, next) {
       final message = next.value;

@@ -1,6 +1,8 @@
 import 'dart:async' show unawaited;
 import 'dart:io' show Platform;
 
+import 'package:android_file_picker/android_file_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -9,10 +11,12 @@ import 'package:music_player/app/theme.dart';
 import 'package:music_player/core/providers/haptics_provider.dart';
 import 'package:music_player/core/providers/listening_provider.dart';
 import 'package:music_player/core/providers/smartplay_provider.dart';
+import 'package:music_player/core/providers/stream_quality_provider.dart';
 import 'package:music_player/core/providers/theme_provider.dart';
 import 'package:music_player/core/utils/haptics.dart';
 import 'package:music_player/core/widgets/glass.dart';
 import 'package:music_player/core/widgets/lottie_icon.dart';
+import 'package:music_player/features/library/providers/downloads_provider.dart';
 
 import '../../playback/widgets/mini_player.dart';
 
@@ -166,6 +170,101 @@ class SettingsScreen extends ConsumerWidget {
                 contentPadding: EdgeInsets.zero,
                 title: Text('Tunefrost'),
                 subtitle: Text('Version 1.4.0'),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.tune_rounded),
+                title: const Text('Audio quality'),
+                subtitle: Text(
+                  ref.watch(streamQualityProvider) == StreamQuality.dataSaver
+                      ? 'Data saver'
+                      : 'High quality',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                ),
+                onTap: () async {
+                  final current = ref.read(streamQualityProvider);
+                  final choice = await showDialog<StreamQuality>(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      title: const Text('Audio quality'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RadioGroup<StreamQuality>(
+                            groupValue: current,
+                            onChanged: (v) => Navigator.of(dialogContext).pop(v),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                RadioListTile<StreamQuality>(
+                                  value: StreamQuality.high,
+                                  title: const Text('High quality'),
+                                  subtitle: const Text('Best sound, uses more data'),
+                                ),
+                                RadioListTile<StreamQuality>(
+                                  value: StreamQuality.dataSaver,
+                                  title: const Text('Data saver'),
+                                  subtitle: const Text('Smaller size, great for slow networks'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          child: const Text('Cancel'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (choice != null) {
+                    await ref.read(streamQualityProvider.notifier).setQuality(choice);
+                  }
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.folder_open_rounded),
+                title: const Text('Download folder'),
+                subtitle: Text(
+                  'Choose a dedicated folder for your downloaded songs/tracks',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                ),
+                onTap: () async {
+                  final downloads = ref.read(downloadsProvider.notifier);
+                  final directory = await FilePicker.getDirectoryPath(
+                    dialogTitle: 'Choose a folder for downloads',
+                    androidOptions: const FilePickerAndroidOptions(
+                      safOptions: AndroidSAFOptions(
+                        grant: AndroidSAFGrant.lifetime,
+                        accessMode: AndroidSAFAccessMode.readWrite,
+                        persistGrant: true,
+                      ),
+                    ),
+                  );
+                  if (directory == null) return;
+                  if (!context.mounted) return;
+
+                  await downloads.setDownloadDirectory(directory);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context)
+                      ..hideCurrentSnackBar()
+                      ..showSnackBar(
+                        const SnackBar(
+                          content: Text('Download folder updated'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                  }
+                },
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,

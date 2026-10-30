@@ -5,8 +5,6 @@ import 'package:music_player/core/models/playlist.dart';
 import 'package:music_player/core/models/song.dart';
 import 'package:music_player/core/repositories/playlist_repository.dart';
 
-import '../../library/providers/library_provider.dart';
-
 final playlistRepositoryProvider = Provider<PlaylistRepository>(
   (ref) => PlaylistRepository(),
 );
@@ -29,7 +27,7 @@ class PlaylistsNotifier extends AsyncNotifier<List<Playlist>> {
     final playlist = Playlist(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       name: name.trim(),
-      songIds: const [],
+      songs: const [],
       createdAt: DateTime.now(),
     );
     await _write([playlist, ...?state.value]);
@@ -43,7 +41,7 @@ class PlaylistsNotifier extends AsyncNotifier<List<Playlist>> {
     playlists[index] = Playlist(
       id: id,
       name: name.trim(),
-      songIds: playlists[index].songIds,
+      songs: playlists[index].songs,
       createdAt: playlists[index].createdAt,
     );
     await _write(playlists);
@@ -54,17 +52,19 @@ class PlaylistsNotifier extends AsyncNotifier<List<Playlist>> {
     await _write(playlists);
   }
 
-  Future<void> addSongs(String id, List<String> songIds) async {
+  Future<void> addSongs(String id, List<Song> songs) async {
     final playlists = [...?state.value];
     final index = playlists.indexWhere((p) => p.id == id);
-    if (index == -1 || songIds.isEmpty) return;
-    final existing = playlists[index].songIds;
-    final added = songIds.where((s) => !existing.contains(s)).toList();
+    if (index == -1 || songs.isEmpty) return;
+    final existing = playlists[index].songs;
+    final added = songs
+        .where((s) => !existing.any((e) => e.id == s.id))
+        .toList();
     if (added.isEmpty) return;
     playlists[index] = Playlist(
       id: id,
       name: playlists[index].name,
-      songIds: [...existing, ...added],
+      songs: [...existing, ...added],
       createdAt: playlists[index].createdAt,
     );
     await _write(playlists);
@@ -74,13 +74,13 @@ class PlaylistsNotifier extends AsyncNotifier<List<Playlist>> {
     final playlists = [...?state.value];
     final index = playlists.indexWhere((p) => p.id == id);
     if (index == -1) return;
-    final ids = [...playlists[index].songIds];
-    if (songIndex < 0 || songIndex >= ids.length) return;
-    ids.removeAt(songIndex);
+    final songs = [...playlists[index].songs];
+    if (songIndex < 0 || songIndex >= songs.length) return;
+    songs.removeAt(songIndex);
     playlists[index] = Playlist(
       id: id,
       name: playlists[index].name,
-      songIds: ids,
+      songs: songs,
       createdAt: playlists[index].createdAt,
     );
     await _write(playlists);
@@ -90,33 +90,29 @@ class PlaylistsNotifier extends AsyncNotifier<List<Playlist>> {
     final playlists = [...?state.value];
     final index = playlists.indexWhere((p) => p.id == id);
     if (index == -1 || from == to) return;
-    final ids = [...playlists[index].songIds];
-    if (from < 0 || to < 0 || from >= ids.length || to >= ids.length) return;
-    final item = ids.removeAt(from);
-    ids.insert(to, item);
+    final songs = [...playlists[index].songs];
+    if (from < 0 || to < 0 || from >= songs.length || to >= songs.length) {
+      return;
+    }
+    final item = songs.removeAt(from);
+    songs.insert(to, item);
     playlists[index] = Playlist(
       id: id,
       name: playlists[index].name,
-      songIds: ids,
+      songs: songs,
       createdAt: playlists[index].createdAt,
     );
     await _write(playlists);
   }
 }
 
-/// Resolves a playlist's song ids against the local library, preserving
-/// playlist order. Songs no longer on the device are skipped.
+/// Returns the songs of a playlist in their stored order.
 final playlistSongsProvider = FutureProvider.family<List<Song>, String>((
   ref,
   playlistId,
 ) async {
   final playlists = await ref.watch(playlistsProvider.future);
-  final library = await ref.watch(musicLibraryProvider.future);
   final playlist = playlists.firstWhereOrNull((p) => p.id == playlistId);
   if (playlist == null) return const [];
-  final byId = {for (final song in library) song.id: song};
-  return [
-    for (final id in playlist.songIds)
-      if (byId[id] != null) byId[id]!,
-  ];
+  return playlist.songs;
 });

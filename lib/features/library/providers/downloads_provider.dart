@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:music_player/audio/youtube_audio_source.dart';
 import 'package:music_player/core/models/song.dart';
+import 'package:music_player/core/providers/stream_quality_provider.dart';
 import 'package:music_player/core/providers/theme_provider.dart';
-import 'package:music_player/core/services/download_service.dart';
+import 'package:music_player/core/services/download_service.dart'
+    show DownloadCancelledException, DownloadService;
 
 import '../../playback/providers/playback_providers.dart';
 
@@ -54,9 +58,43 @@ class DownloadsNotifier extends Notifier<DownloadsState> {
   /// Per-video cancel flags, cleared once the download settles.
   final Map<String, bool> _cancel = {};
 
+  /// Emits the title of each song that finishes downloading.
+  final StreamController<String> _completedController =
+      StreamController<String>.broadcast();
+  Stream<String> get completed => _completedController.stream;
+
+  /// Emits the title of each song whose download fails.
+  final StreamController<String> _failedController =
+      StreamController<String>.broadcast();
+  Stream<String> get failed => _failedController.stream;
+
+  /// Emits the title of each song whose download completed but could not be
+  /// written to the user-chosen SAF folder (fell back to app storage).
+  final StreamController<String> _safFallbackController =
+      StreamController<String>.broadcast();
+  Stream<String> get safFallback => _safFallbackController.stream;
+
   @override
-  DownloadsState build() =>
-      DownloadsState(songs: ref.read(downloadServiceProvider).loadIndex());
+  DownloadsState build() {
+    ref.onDispose(_completedController.close);
+    ref.onDispose(_failedController.close);
+    ref.onDispose(_safFallbackController.close);
+    return DownloadsState(songs: ref.read(downloadServiceProvider).loadIndex());
+  }
+
+  /// Whether a download directory has been chosen by the user.
+  bool get hasDownloadDirectory =>
+      ref.read(downloadServiceProvider).downloadDirectory != null;
+
+  /// Sets the directory where future downloads will be stored.
+  Future<void> setDownloadDirectory(String path) async {
+    await ref.read(downloadServiceProvider).setDownloadDirectory(path);
+  }
+
+  /// Clears the stored download directory so the user is re-prompted next time.
+  Future<void> clearDownloadDirectory() async {
+    await ref.read(downloadServiceProvider).clearDownloadDirectory();
+  }
 
   bool isDownloaded(String videoId) =>
       state.songs.any((s) => s.sourceVideoId == videoId);
@@ -78,7 +116,7 @@ class DownloadsNotifier extends Notifier<DownloadsState> {
       failed: {...state.failed}..remove(videoId),
     );
     try {
-      final path = await service.download(
+      final result = await service.download(
         song,
         onProgress: (fraction) {
           state = state.copyWith(
@@ -86,6 +124,7 @@ class DownloadsNotifier extends Notifier<DownloadsState> {
           );
         },
         isCancelled: () => _cancel[videoId] ?? false,
+        quality: ref.read(streamQualityProvider),
       );
       final saved = Song.download(
         videoId: videoId,
@@ -94,17 +133,28 @@ class DownloadsNotifier extends Notifier<DownloadsState> {
         album: song.album,
         durationMs: song.durationMs,
         artworkUrl: song.artworkPath,
-        filePath: path,
+        filePath: result.playbackPath,
+        safPath: result.safPath,
         dateAdded: DateTime.now(),
       );
       final songs = [saved, ...state.songs];
       await service.saveIndex(songs);
       state = state.copyWith(songs: songs);
-    } catch (_) {
+      _completedController.add(song.title);
+      // The user chose a SAF folder but we could not verify a copy there.
+      // The app-private playback copy still exists, so the download is usable
+      // offline, but we must not silently claim it landed in the chosen folder.
+      if (result.safRequested && !result.safWritten) {
+        _safFallbackController.add(song.title);
+      }
+    } catch (e) {
       // The service deletes partial files; keep the song retryable unless
       // the run was cancelled.
-      if (state.active.contains(videoId)) {
+      if (e is DownloadCancelledException) {
+        // User-initiated cancel does not mark the download as failed.
+      } else if (state.active.contains(videoId)) {
         state = state.copyWith(failed: {...state.failed, videoId});
+        _failedController.add(song.title);
       }
     } finally {
       _cancel.remove(videoId);

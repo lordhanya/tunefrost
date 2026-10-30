@@ -53,10 +53,10 @@ class PrivacyScreen extends StatelessWidget {
             const _Section(
               title: 'What the app accesses',
               body:
-                  '• Your music files — to list and play your library and show '
+                  '• Your music files, to list and play your library and show '
                   'album art.\n'
-                  '• The internet — to search and stream from YouTube Music.\n'
-                  '• Search phrases derived from your listening — only while '
+                  '• The internet, to search and stream from YouTube Music.\n'
+                  '• Search phrases derived from your listening, only while '
                   'Smart Play discovery is on, which it is not by default.',
             ),
             const _Section(
@@ -66,12 +66,12 @@ class PrivacyScreen extends StatelessWidget {
                   '• A small cache that maps YouTube video ids to stream links, '
                   'so replays resolve faster.\n'
                   '• Any audio you choose to download.\n'
-                  '• A listening history for Smart Play — how long you '
+                  '• A listening history for Smart Play: how long you '
                   'listened, whether a track finished, and whether you '
-                  'skipped it early — plus the taste profile computed from '
-                  'it on your device. Neither is ever uploaded or shared, and '
-                  'you can delete both from Settings → Data → Listening '
-                  'history.',
+                  'skipped it early. Also stored is the taste profile '
+                  'computed from it on your device. Neither is ever uploaded '
+                  'or shared, and you can delete both from Settings → Data → '
+                  'Listening history.',
             ),
             const _Section(
               title: 'What Smart Play sends (off by default)',
@@ -80,8 +80,8 @@ class PrivacyScreen extends StatelessWidget {
                   'Settings → Data → Smart Play discovery or from the switch '
                   'on the Smart Play screen.\n\n'
                   'When it is on, the app turns your taste profile into a '
-                  'few search queries — at most four artist names at a time '
-                  '— and sends those phrases to the discovery provider.\n\n'
+                  'few search queries, at most four artist names at a time, '
+                  'and sends those phrases to the discovery provider.\n\n'
                   '• Sent: the search phrases themselves.\n'
                   '• Never sent: your listening history, play counts, '
                   'favourites, scores, affinities, seed lists, or any other '
@@ -98,7 +98,7 @@ class PrivacyScreen extends StatelessWidget {
                   'Play discovery is on it also sends the artist-name search '
                   'phrases described above. That traffic goes to Google, not '
                   'to the developer, and is governed by Google\'s own privacy '
-                  'policy — none of it carries your listening history or '
+                  'policy. None of it carries your listening history or '
                   'taste profile.\n\n'
                   'Those requests read YouTube\'s public web pages rather '
                   'than the official YouTube Data API, so there is no '
@@ -106,7 +106,7 @@ class PrivacyScreen extends StatelessWidget {
                   'plainly rather than described as an official '
                   'integration.\n\n'
                   'The "Developed by" entry in Settings opens a website in '
-                  'your browser — the app makes no background request to it.',
+                  'your browser. The app makes no background request to it.',
             ),
             const _Section(
               title: 'Children',

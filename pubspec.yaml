@@ -21,6 +21,7 @@ dependencies:
 
   permission_handler: ^13.0.2
   shared_preferences: ^2.5.5
+  android_file_picker: ^2.1.2
 
   youtube_explode_dart: ^3.1.0
 
@@ -29,6 +30,8 @@ dependencies:
   path_provider: ^2.1.6
   url_launcher: ^6.3.0
   lottie: ^3.6.1
+  package_info_plus: ^10.2.2
+  file_picker: ^13.3.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

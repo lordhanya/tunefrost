@@ -102,7 +102,7 @@ class PlaylistsScreen extends ConsumerWidget {
                   ),
                   title: Text(playlist.name),
                   subtitle: Text(
-                    '${playlist.songIds.length} songs',
+                    '${playlist.songs.length} songs',
                     style: TextStyle(
                       color: scheme.onSurfaceVariant,
                       fontSize: 13,

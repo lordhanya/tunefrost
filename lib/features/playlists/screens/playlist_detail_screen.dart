@@ -136,11 +136,11 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                   itemBuilder: (context, index) {
                     final song = songs[index];
                     return SizedBox(
+                      key: ValueKey(
+                        'pl-${widget.playlistId}-${song.id}-$index',
+                      ),
                       height: kSongTileExtent,
                       child: SongTile(
-                        key: ValueKey(
-                          'pl-${widget.playlistId}-${song.id}-$index',
-                        ),
                         song: song,
                         songs: songs,
                         index: index,

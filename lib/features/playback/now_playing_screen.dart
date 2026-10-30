@@ -47,6 +47,14 @@ class NowPlayingScreen extends ConsumerWidget {
         actions: [
           if (song != null) ...[
             IconButton(
+              icon: const Icon(Icons.playlist_add_rounded),
+              tooltip: 'Add to playlist',
+              onPressed: () {
+                context.hapticLight();
+                showAddToPlaylistSheet(context, ref, songs: [song]);
+              },
+            ),
+            IconButton(
               icon: favoriteIds.contains(song.id)
                   ? const LottieIcon(LottieAssets.heart)
                   : const Icon(Icons.favorite_border_rounded),
@@ -155,7 +163,9 @@ class _DownloadButtonState extends ConsumerState<_DownloadButton> {
     });
     _ackWatchdog?.cancel();
     _ackWatchdog = Timer(const Duration(milliseconds: 1800), _endAcknowledge);
-    ref.read(downloadsProvider.notifier).start(widget.song);
+    ensureDownloadDirectory(context, ref, () async {
+      await ref.read(downloadsProvider.notifier).start(widget.song);
+    });
   }
 
   void _endAcknowledge() {
@@ -205,8 +215,9 @@ class _DownloadButtonState extends ConsumerState<_DownloadButton> {
 
     if (videoId != null && downloads.failed.contains(videoId)) {
       return IconButton(
-        tooltip: 'Download failed — try again',
-        onPressed: () => notifier.start(song),
+        tooltip: 'Download failed, try again',
+        onPressed: () =>
+            ensureDownloadDirectory(context, ref, () => notifier.start(song)),
         color: scheme.error,
         icon: const Icon(Icons.error_outline_rounded, size: 24),
       );

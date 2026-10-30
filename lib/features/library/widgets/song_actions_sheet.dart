@@ -1,4 +1,6 @@
 import 'package:collection/collection.dart';
+import 'package:android_file_picker/android_file_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -41,6 +43,59 @@ Future<String?> showTextPrompt(
       initial: initial,
     ),
   );
+}
+
+/// Prompts for a download folder if one hasn't been chosen yet, then runs
+/// [onConfirmed]. Returns without calling [onConfirmed] if the user cancels.
+Future<void> ensureDownloadDirectory(
+  BuildContext context,
+  WidgetRef ref,
+  Future<void> Function() onConfirmed,
+) async {
+  final downloads = ref.read(downloadsProvider.notifier);
+  if (downloads.hasDownloadDirectory) {
+    await onConfirmed();
+    return;
+  }
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Choose a home for your downloads'),
+      content: const Text(
+        'Pick a dedicated folder for your downloaded songs so you know '
+        'where they live. You can change this later in Settings.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: const Text('Choose folder'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed != true || !context.mounted) return;
+
+  final directory = await FilePicker.getDirectoryPath(
+    dialogTitle: 'Choose a folder for downloads',
+    androidOptions: const FilePickerAndroidOptions(
+      safOptions: AndroidSAFOptions(
+        grant: AndroidSAFGrant.lifetime,
+        accessMode: AndroidSAFAccessMode.readWrite,
+        persistGrant: true,
+      ),
+    ),
+  );
+  if (directory == null) return;
+  if (!context.mounted) return;
+
+  await downloads.setDownloadDirectory(directory);
+  if (context.mounted) await onConfirmed();
 }
 
 class _TextPromptDialog extends StatefulWidget {
@@ -202,7 +257,7 @@ Future<void> showSongActionsSheet(
                 title: const Text('Add to playlist'),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
-                  showAddToPlaylistSheet(context, ref, songIds: [song.id]);
+                  showAddToPlaylistSheet(context, ref, songs: [song]);
                 },
               ),
               if (isDownloadCopy)
@@ -244,8 +299,11 @@ Future<void> showSongActionsSheet(
                     title: const Text('Download failed'),
                     subtitle: const Text('Check your connection and try again'),
                     trailing: FilledButton.tonal(
-                      onPressed: () =>
-                          ref2.read(downloadsProvider.notifier).start(song),
+                      onPressed: () => ensureDownloadDirectory(
+                        context,
+                        ref2,
+                        () => ref2.read(downloadsProvider.notifier).start(song),
+                      ),
                       child: const Text('Retry'),
                     ),
                   )
@@ -272,8 +330,11 @@ Future<void> showSongActionsSheet(
                     ),
                     title: const Text('Download'),
                     subtitle: const Text('Save a copy for offline listening'),
-                    onTap: () =>
-                        ref2.read(downloadsProvider.notifier).start(song),
+                    onTap: () => ensureDownloadDirectory(
+                      context,
+                      ref2,
+                      () => ref2.read(downloadsProvider.notifier).start(song),
+                    ),
                   ),
               const SizedBox(height: 8),
             ],
@@ -284,11 +345,11 @@ Future<void> showSongActionsSheet(
   );
 }
 
-/// Pick a playlist (or create one) to file [songIds] into.
+/// Pick a playlist (or create one) to file [songs] into.
 Future<void> showAddToPlaylistSheet(
   BuildContext context,
   WidgetRef ref, {
-  required List<String> songIds,
+  required List<Song> songs,
 }) {
   final scheme = Theme.of(context).colorScheme;
 
@@ -298,11 +359,11 @@ Future<void> showAddToPlaylistSheet(
     showDragHandle: true,
     builder: (sheetContext) => SafeArea(
       child: Consumer(
-        builder: (context, consumerRef, _) {
+        builder: (listContext, consumerRef, _) {
           final playlists = consumerRef.watch(playlistsProvider);
           return ConstrainedBox(
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(context).height * 0.6,
+              maxHeight: MediaQuery.sizeOf(listContext).height * 0.6,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -311,7 +372,7 @@ Future<void> showAddToPlaylistSheet(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                   child: Text(
                     'Add to playlist',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(listContext).textTheme.titleMedium,
                   ),
                 ),
                 Flexible(
@@ -324,6 +385,9 @@ Future<void> showAddToPlaylistSheet(
                           title: const Text('New playlist'),
                           onTap: () async {
                             Navigator.of(sheetContext).pop();
+                            // The Consumer above is disposed once the sheet
+                            // pops, so the dialog and the writes below must
+                            // go through the caller's context and ref.
                             final name = await showTextPrompt(
                               context,
                               title: 'New playlist',
@@ -331,11 +395,11 @@ Future<void> showAddToPlaylistSheet(
                               confirmLabel: 'Create',
                             );
                             if (name == null || name.trim().isEmpty) return;
-                            final notifier = consumerRef.read(
+                            final notifier = ref.read(
                               playlistsProvider.notifier,
                             );
                             final playlist = await notifier.create(name);
-                            await notifier.addSongs(playlist.id, songIds);
+                            await notifier.addSongs(playlist.id, songs);
                             if (context.mounted) {
                               showAppSnack(
                                 context,
@@ -350,14 +414,14 @@ Future<void> showAddToPlaylistSheet(
                             leading: const Icon(Icons.queue_music_rounded),
                             title: Text(playlist.name),
                             subtitle: Text(
-                              '${playlist.songIds.length} songs',
-                              style: Theme.of(context).textTheme.bodySmall,
+                              '${playlist.songs.length} songs',
+                              style: Theme.of(listContext).textTheme.bodySmall,
                             ),
                             onTap: () async {
                               Navigator.of(sheetContext).pop();
-                              await consumerRef
+                              await ref
                                   .read(playlistsProvider.notifier)
-                                  .addSongs(playlist.id, songIds);
+                                  .addSongs(playlist.id, songs);
                               if (context.mounted) {
                                 showAppSnack(
                                   context,

@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
 import 'core/providers/theme_provider.dart';
+import 'features/whatsnew/providers/whats_new_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,7 +48,14 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   runApp(
     ProviderScope(
-      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        // Captured before anything can write a key: an untouched
+        // `SharedPreferences` is the only evidence that this install has
+        // never run, and the What's New screen needs to tell an update from a
+        // first launch. Once the first key lands, the question is gone.
+        freshInstallProvider.overrideWithValue(prefs.getKeys().isEmpty),
+      ],
       child: const MusicPlayerApp(),
     ),
   );

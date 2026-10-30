@@ -7,10 +7,10 @@ import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:rxdart/rxdart.dart';
 
+import 'package:music_player/audio/youtube_audio_source.dart';
 import 'package:music_player/core/models/queue_state.dart';
 import 'package:music_player/core/models/song.dart';
-
-import 'youtube_audio_source.dart';
+import 'package:music_player/core/providers/stream_quality_provider.dart';
 
 /// Owns the [AudioPlayer] engine and turns its low-level events into a single
 /// reactive [QueueState] stream the UI can consume.
@@ -74,6 +74,12 @@ class AudioPlayerService {
   final _failures = PublishSubject<String>();
 
   final StreamLinkCache _streamCache;
+  StreamQuality _quality = StreamQuality.high;
+
+  void setStreamQuality(StreamQuality quality) {
+    _quality = quality;
+  }
+
   late final YouTubeStreamResolver _resolver = YouTubeStreamResolver(
     _streamCache,
   );
@@ -425,6 +431,7 @@ class AudioPlayerService {
             videoId: song.videoId!,
             resolver: resolver,
             tag: tag,
+            quality: _quality,
           );
   }
 

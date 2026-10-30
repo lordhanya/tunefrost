@@ -12,6 +12,7 @@ import 'package:music_player/core/models/queue_state.dart';
 import 'package:music_player/core/models/song.dart';
 import 'package:music_player/core/providers/listening_provider.dart';
 import 'package:music_player/core/providers/play_history_provider.dart';
+import 'package:music_player/core/providers/stream_quality_provider.dart';
 import 'package:music_player/core/providers/theme_provider.dart';
 import 'package:music_player/core/services/queue_storage.dart';
 import 'package:music_player/core/taste/listening_stint_tracker.dart';
@@ -28,6 +29,12 @@ final streamLinkCacheProvider = Provider<StreamLinkCache>(
 /// holding whatever queue was persisted last time.
 final audioPlayerProvider = Provider<AudioPlayerService>((ref) {
   final service = AudioPlayerService(ref.watch(streamLinkCacheProvider));
+
+  // Sync stream quality with playback engine
+  ref.listen(streamQualityProvider, (prev, next) {
+    service.setStreamQuality(next);
+  });
+  service.setStreamQuality(ref.read(streamQualityProvider));
 
   final saved = ref.watch(queueStorageProvider).load();
   if (saved != null) {

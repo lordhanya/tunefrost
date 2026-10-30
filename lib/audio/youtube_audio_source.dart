@@ -13,6 +13,8 @@ import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
+import 'package:music_player/core/providers/stream_quality_provider.dart';
+
 /// Thrown when a video exposes no audio-only adaptive stream.
 class NoAudioStreamException implements Exception {
   const NoAudioStreamException();
@@ -50,25 +52,35 @@ class YouTubeStreamResolver {
 
   final StreamLinkCache _cache;
 
-  Future<AudioOnlyStreamInfo> resolve(String videoId) async {
-    final cached = _cache.get(videoId);
+  Future<AudioOnlyStreamInfo> resolve(
+    String videoId, {
+    StreamQuality quality = StreamQuality.high,
+  }) async {
+    final cachedKey = '${videoId}_${quality.name}';
+    final cached = _cache.get(cachedKey);
     if (cached != null) return cached;
     // toJson() keeps live objects (VideoId, FileSize, …) in the map, which
     // fromJson refuses; crossing the isolate as JSON text flattens them.
     final stream = AudioOnlyStreamInfo.fromJson(
-      jsonDecode(await _extract(videoId)) as Map<String, dynamic>,
+      jsonDecode(await _extract(videoId, quality)) as Map<String, dynamic>,
     );
-    await _cache.put(videoId, stream);
+    await _cache.put(cachedKey, stream);
     return stream;
   }
 
-  static Future<String> _extract(String videoId) =>
-      Isolate.run(() => _extractManifest(videoId));
+  static Future<String> _extract(String videoId, StreamQuality quality) =>
+      Isolate.run(() => _extractManifest(videoId, quality));
 
   /// Forgets the cached link for [videoId]; the next resolve starts over.
-  void invalidate(String videoId) => _cache.remove(videoId);
+  void invalidate(String videoId) {
+    _cache.remove('${videoId}_high');
+    _cache.remove('${videoId}_dataSaver');
+  }
 
-  static Future<String> _extractManifest(String videoId) async {
+  static Future<String> _extractManifest(
+    String videoId,
+    StreamQuality quality,
+  ) async {
     final youtube = YoutubeExplode();
     try {
       // visionOS signs uncapped stream URLs; androidSdkless backs it up for
@@ -81,7 +93,9 @@ class YouTubeStreamResolver {
       // sortByBitrate() is descending despite its doc comment, so first is
       // the highest bitrate (the library's own pickers read `.first`).
       final streams = manifest.audioOnly.sortByBitrate();
-      final best = streams.firstOrNull;
+      final best = quality == StreamQuality.high
+          ? streams.firstOrNull
+          : (streams.skip(1).firstOrNull ?? streams.firstOrNull);
       if (best == null) throw const NoAudioStreamException();
       return jsonEncode(best.toJson());
     } finally {
@@ -142,10 +156,12 @@ class YouTubeAudioSource extends StreamAudioSource {
     required this.videoId,
     required this.resolver,
     super.tag,
+    this.quality = StreamQuality.high,
   });
 
   final String videoId;
   final YouTubeStreamResolver resolver;
+  final StreamQuality quality;
 
   static final _http = HttpClient()..autoUncompress = false;
 
@@ -155,7 +171,7 @@ class YouTubeAudioSource extends StreamAudioSource {
 
   @override
   Future<StreamAudioResponse> request([int? start, int? end]) async {
-    final stream = await resolver.resolve(videoId);
+    final stream = await resolver.resolve(videoId, quality: quality);
     final length = stream.size.totalBytes;
 
     start ??= 0;
@@ -201,12 +217,12 @@ class YouTubeAudioSource extends StreamAudioSource {
     }
     if (_isOk(response.statusCode)) return (stream, response);
 
-    await response.drain<void>();
+    await response.drain<void>().timeout(const Duration(seconds: 30));
     stream = await _freshLink(stream);
     response = await _get(stream.url, start, end);
     if (_isOk(response.statusCode)) return (stream, response);
 
-    await response.drain<void>();
+    await response.drain<void>().timeout(const Duration(seconds: 30));
     if (kDebugMode) {
       debugPrint('yt stream failed (${response.statusCode}), link refreshed');
     }
@@ -218,7 +234,7 @@ class YouTubeAudioSource extends StreamAudioSource {
 
   Future<AudioOnlyStreamInfo> _freshLink(AudioOnlyStreamInfo previous) async {
     resolver.invalidate(videoId);
-    final fresh = await resolver.resolve(videoId);
+    final fresh = await resolver.resolve(videoId, quality: quality);
     // A different format mid-stream would corrupt the audio, so refuse it.
     if (fresh.tag != previous.tag) throw const NoAudioStreamException();
     if (kDebugMode) debugPrint('yt stream link refreshed on the fly');
@@ -226,9 +242,9 @@ class YouTubeAudioSource extends StreamAudioSource {
   }
 
   Future<HttpClientResponse> _get(Uri url, int start, int end) async {
-    final request = await _http.getUrl(url);
+    final request = await _http.getUrl(url).timeout(const Duration(seconds: 15));
     request.headers.set(HttpHeaders.rangeHeader, 'bytes=$start-${end - 1}');
-    return request.close();
+    return request.close().timeout(const Duration(seconds: 15));
   }
 
   bool _isOk(int status) =>

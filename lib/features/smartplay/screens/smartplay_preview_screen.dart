@@ -441,8 +441,8 @@ class _Confidence extends StatelessWidget {
       ArtistConfidence.medium => (
         'artist inferred',
         scheme.tertiary,
-        'Derived from the title agreeing with the uploading channel — '
-            'likely right, not certain.',
+        'Derived from the title agreeing with the uploading channel, so it '
+            'is likely right but not certain.',
       ),
       ArtistConfidence.none => (
         'channel',

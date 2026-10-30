@@ -8,6 +8,11 @@ class Song {
   /// Absolute path to the file; null for streamed songs.
   final String? filePath;
 
+  /// SAF tree URI of the user-chosen download folder a user-visible copy was
+  /// written to, or null when no SAF folder is in use / the copy could not be
+  /// verified there. The app-private [filePath] remains the playback source.
+  final String? safPath;
+
   /// MediaStore content URI (e.g. `content://media/external/audio/media/42`).
   /// On Android this must be used for playback: raw file paths to shared
   /// storage are blocked by scoped storage even with the media permission.
@@ -33,6 +38,7 @@ class Song {
     required this.album,
     required this.durationMs,
     this.filePath,
+    this.safPath,
     this.contentUri,
     this.videoId,
     this.artworkPath,
@@ -73,6 +79,7 @@ class Song {
     required String album,
     required int durationMs,
     required String filePath,
+    String? safPath,
     String? artworkUrl,
     DateTime? dateAdded,
   }) => Song(
@@ -83,6 +90,7 @@ class Song {
     album: album,
     durationMs: durationMs,
     filePath: filePath,
+    safPath: safPath,
     artworkPath: artworkUrl,
     dateAdded: dateAdded,
   );
@@ -105,6 +113,7 @@ class Song {
     album: album,
     durationMs: durationMs,
     filePath: filePath,
+    safPath: safPath,
     contentUri: contentUri,
     videoId: videoId,
     artworkPath: artworkPath,
@@ -123,6 +132,7 @@ class Song {
     'album': album,
     'durationMs': durationMs,
     'filePath': filePath,
+    'safPath': safPath,
     'contentUri': contentUri,
     'videoId': videoId,
     'artworkPath': artworkPath,
@@ -136,6 +146,7 @@ class Song {
     album: json['album'] as String,
     durationMs: (json['durationMs'] as num?)?.toInt() ?? 0,
     filePath: json['filePath'] as String?,
+    safPath: json['safPath'] as String?,
     contentUri: json['contentUri'] as String?,
     videoId: json['videoId'] as String?,
     artworkPath: json['artworkPath'] as String?,

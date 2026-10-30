@@ -1,28 +1,32 @@
+import 'package:music_player/core/models/song.dart';
+
 class Playlist {
   final String id;
   final String name;
-  final List<String> songIds;
+  final List<Song> songs;
   final DateTime createdAt;
 
   const Playlist({
     required this.id,
     required this.name,
-    required this.songIds,
+    required this.songs,
     required this.createdAt,
   });
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
-    'songIds': songIds,
+    'songs': [for (final song in songs) song.toJson()],
     'createdAt': createdAt.millisecondsSinceEpoch,
   };
 
   factory Playlist.fromJson(Map<String, dynamic> json) => Playlist(
     id: json['id'] as String,
     name: json['name'] as String,
-    songIds:
-        (json['songIds'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+    songs:
+        (json['songs'] as List<dynamic>?)
+            ?.map((e) => Song.fromJson(e as Map<String, dynamic>))
+            .toList() ??
         const [],
     createdAt: DateTime.fromMillisecondsSinceEpoch(
       json['createdAt'] as int? ?? 0,
